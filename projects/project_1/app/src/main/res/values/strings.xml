@@ -21,4 +21,5 @@
     <string name="switch_prefix">pre</string>
     <string name="button_clear">clear</string>
     <string name="button_deliminator">deliminator</string>
+    <string name="button_clear_all">CE</string>
 </resources>
