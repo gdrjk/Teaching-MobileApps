@@ -13,16 +13,69 @@ button_period for decimal notation, button_equals, button_clear to reset the cal
 and button_deliminator to indicate the end of a numeric input.
  */
 
-package sam.post_pre_calc;
+        package sam.post_pre_calc;
 
-import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
-import android.view.View;
-import android.widget.Button;
-import android.widget.TextView;
+        import android.support.v7.app.AppCompatActivity;
+        import android.os.Bundle;
+        import android.view.View;
+        import android.widget.Button;
+        import android.widget.TextView;
 
-import static java.lang.Boolean.FALSE;
-import static java.lang.Boolean.TRUE;
+        import static java.lang.Boolean.FALSE;
+        import static java.lang.Boolean.TRUE;
+class Node {
+    private String nodeValue;
+    private Node next;
+    private Node previous;
+    private Boolean isOperator;
+
+    public Node getNext(){
+        return this.next;
+    }
+
+    public void setNext(Node current) {
+        this.next = current;
+    }
+
+    public Node getPrevious() {
+        return this.previous;
+    }
+
+    public void setPrevious(Node current) {
+        this.previous = current;
+    }
+
+    public void setIsOperator(Boolean value) {
+        isOperator = value;
+    }
+
+    public Boolean getIsOperator() {
+        return isOperator;
+    }
+
+    public String getNodeValue() {
+        return nodeValue;
+    }
+
+    public void setNodeValue(String newVal) {
+        nodeValue = newVal;
+    }
+
+    Node(String newVal, Node previousNode) {
+        setNext(null);
+        setPrevious(previousNode);
+        setNodeValue(newVal);
+        switch(newVal) {
+            case "+":
+            case "-":
+            case "*":
+            case "/":
+                setIsOperator(TRUE);
+            default:
+                setIsOperator(FALSE);
+        }
+    }
+}
 
 public class MainActivity extends AppCompatActivity {
 
@@ -48,13 +101,15 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    //sets buffer to "0" and redraws
     public void buttonClearClick(View v) {
         bufferString = "0";
         TextView bufferScreenView = findViewById(R.id.buffer_screen);
         bufferScreenView.setText(bufferString);
     }
 
-    public void buttonClearAllLongClick(View v) {
+    //Sets buffer and final to "0" and redraws
+    public void buttonClearAllClick(View v) {
         bufferString = "0";
         finalDisplayString = "0";
         TextView bufferScreenView = findViewById(R.id.buffer_screen);
@@ -64,6 +119,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    //When decimal is pressed, it appears in the buffer but won't be placed until a following numeric value is added in buttonNumericOnClick
     public void buttonPeriodOnClick(View v) {
         if (!decimalSetTrue) {
             decimalSetTrue = TRUE;
@@ -105,8 +161,17 @@ public class MainActivity extends AppCompatActivity {
         msgTextView.setText(bufferString);
     }
 
-
-
+    //When the equals operator is pressed, the buffer goes to the final and the final splits the string and puts them into nodes.
+    public void buttonEqualsOnClick() {
+        //call moveBufferToDisplay with an empty string for the operator
+        moveBufferToDisplay("");
+        String arrayOfValues[] = finalDisplayString.split(" ");
+        Node previous = null;
+        for(String val : arrayOfValues){
+            Node current = new Node(val, previous);
+            previous = current;
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
