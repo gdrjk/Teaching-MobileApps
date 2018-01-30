@@ -1,8 +1,8 @@
-# APPLICATION NAME
-Complete description and overview.  This is where you describe in a brief, yet clear and concise, manner what your product should do and how you expect it should be used.  Why did you write this application?  What purpose does it serve?  It's okay if the only purpose is to meet the homework requirement (but try to move bedyond just that - be creative!).
+# post_pre_calc
+I attempted to make a pre/postfix calculator. The purpose was to make my first GUI calculator in Android Studio.
 
 ## System Design 
-This is where you specify all of the system's requirements.  This section should accurately portray the complete operation of your application.  Provide scenarios, use cases, system requirements, and diagrams/screenshots of the system.
+This application should have run on any android device. 
 
 ## Usage
-This is where you explain how to use your application
+This application may or may not have any functionality. Both of my machines I code on at home have completely different fatal errors and will have to have a complete OS reinstall on at least one of them. The intended usage was you should be able to put in any number in decimal notation, by hitting the deliminator key the number would move from the buffer to the display, or it would move to the buffer by pressing one of four operators: +,-,*,/. The clear key would clear the buffer, and the CE would clear the buffer and the display. By hitting the = key, the display string was calculated and displayed the result in its place.
