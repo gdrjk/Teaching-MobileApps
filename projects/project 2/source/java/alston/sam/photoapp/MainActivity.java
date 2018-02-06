@@ -6,10 +6,11 @@ Project Overview:
     The goal of this app is to meet the standards of the CS 480 Project #2 requirements.
     "...develop an image manipulation application. Your program should be able to both
     manipulate existing phone images or to take new ones that can then be manipulated."
-    
+
 Current Status: Currently, the application launches to the first view where you can
     press a button to launch the camera, once you take an image and approve it said
     image will appear in the imageView below the open camera button in the first view.
+    Open image gallery button added, does not yet add image to imageView.
 */
 package alston.sam.photoapp;
 
@@ -25,8 +26,10 @@ import android.widget.ImageView;
 public class MainActivity extends AppCompatActivity {
 
     Button btnpic;
+    Button btngal;
     ImageView imgTakenPic;
     private static final int CAM_REQUEST=1313;
+    public static final int PICK_IMAGE = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,6 +39,10 @@ public class MainActivity extends AppCompatActivity {
         btnpic = (Button) findViewById(R.id.button);
         imgTakenPic = (ImageView)findViewById(R.id.imageView);
         btnpic.setOnClickListener(new btnTakePhotoClicker());
+
+        btngal = (Button) findViewById(R.id.button2);
+        imgTakenPic = (ImageView) findViewById(R.id.imageView);
+        btngal.setOnClickListener(new btnOpenGalleryClicker());
     }
 
     @Override
@@ -45,6 +52,10 @@ public class MainActivity extends AppCompatActivity {
 
             if(requestCode == CAM_REQUEST){
                 Bitmap bitmap = (Bitmap) data.getExtras().get("data");
+                imgTakenPic.setImageBitmap(bitmap);
+            }
+            if(requestCode == PICK_IMAGE) {
+                Bitmap bitmap =  (Bitmap) data.getExtras().get("data");
                 imgTakenPic.setImageBitmap(bitmap);
             }
         } catch(Exception e) {
@@ -60,5 +71,17 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
             startActivityForResult(intent, CAM_REQUEST);
         }
+    }
+
+    class btnOpenGalleryClicker implements  Button.OnClickListener{
+
+        @Override
+        public void onClick(View view) {
+            Intent intent = new Intent();
+            intent.setType("image/*");
+            intent.setAction(Intent.ACTION_GET_CONTENT);
+            startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICK_IMAGE);
+        }
+
     }
 }
