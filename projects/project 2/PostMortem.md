@@ -1,11 +1,11 @@
-# Post Mortem
-Use this page to discuss what you learned from completing this assignment.  It should be completed **after** you finish coding your assignment. Your post mortem must be at least 500 words long.  Note that the focus of the paper should be on your reflection, not on structure (e.g. introductory paragraph, conclusion, etc.).  The essay is graded on content (i.e. it shows deep though) rather than syntax (e.g. spelling) and structure.  
+Samuel Alston
+CS 480 - S18
+Project 2 - Post Mortem
 
-Below are some prompts that can be used to get you thinking.  Feel free to use these or to make up your own.
-* Describe a particular struggle that you overcame when working on this programming assignment.
-* Conversely, describe an issue with your assignment that you were unable to resolve.
-* Provide advice to a future student on how he or she might succeed on this assignment.
-* Describe the most fun aspect of the assignment.
-* Describe the most challenging aspect of the assignment.
-* Describe the most difficult aspect of the assignment to understand.
-* Provide any suggestions for improving the assignment in the future.
+
+
+  In this project I set out to create an app that would apply some interesting color filters and save a new image. I did get it to do image manipulation, and that is where I spent most of my time, tweaking how it would work. I never did you get the save function running on any of my attempts. I learned a lot for this project though, and it spawned a few minor projects I worked on between starting and completing this project. I call my deliverable 'photoapp'.
+  Photoapp took less time than I expected to get running, and the thing that was "easiest" ended up eating a lot of my attention. Applying color filters to the bitmap was a fairly straight forward process, but what values you allow algorithmic consumed my attention. I found a basic color filtering algorithm and started to make it my own, and then five hours went by. I would not say I am completely happy with how it turned out, but I understand it a lot more than I expected to when the project was assigned.
+	On the last day of in-class work for this project, I overheard Adam telling a student to worry about getting save working and then to come back to other features. At the time I thought save would not take that long, and I would not have to worry about it since the midnight deadline was far off. Little did I know that Adam had given two key pieces of advice that I didn’t take. The second being that three hours sounds like a long time until you sit down and start coding. And I sat down for more than eight hours.
+	One of the things I was proud of was making an app that didn’t have a bug zone, or a high risk area that could lead to a crash. With my previous project I knew that there were user inputs that would always cause a crash because I did not put complete input checks to catch all cases of bad data. This app uses inputs that all operate within acceptable ranges, so none of the colors go above 255 or anything like that. I also like that I learned how to use SeekBars, I believe that will be very useful in other apps, and I hope to get better at implementing them. The other thing I’m proud of, although it was very basic, is setting an orientation lock on the app so I wouldn’t have to worry about my xml’s when they were rotated.
+	Obviously not getting one of the key components working was a let down for me, but I feel more critically about my UI design than the save function. It feels a little cramped to use, but I was working with limited space that I allotted. If I had to do it again, I might do some kind of transparent sliders that disappear when you are adjusting them. Basically anything to get a bigger display area for the image being manipulated would have also been a huge plus.
