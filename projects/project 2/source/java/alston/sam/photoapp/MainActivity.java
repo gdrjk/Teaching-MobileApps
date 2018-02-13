@@ -7,9 +7,9 @@ Project Overview:
     manipulate existing phone images or to take new ones that can then be manipulated."
 Current Status: Currently, the application launches to the first view where you can
     press a button to launch the camera, once you take an image and approve it said
-    image will appear in the imageView below the open camera button in the first view.
+    image will appear in the imageView above the open camera button in the first view.
     Open image gallery button added, selected image can be moved to the imageView
-    Edit image button added. Nothing attached to it yet.
+    Edit image button added. Takes us to new activity, passing bitmap as an extra to intent.
 */
 package alston.samuel.photoapp;
 
@@ -32,24 +32,30 @@ public class MainActivity extends AppCompatActivity {
 
     Button btnpic;
     Button btngal;
+    Button btnedit;
     ImageView imgTakenPic;
+    Bitmap bitmap;
     //code for using camera
     private static final int CAM_REQUEST = 1313;
     //code for using gallery/file explorer
     public static final int PICK_IMAGE = 1;
+    private static final int IMAGE_VIEW_WIDTH = 455;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        btnpic = (Button) findViewById(R.id.button_camera);
         imgTakenPic = (ImageView)findViewById(R.id.imageView);
+
+        btnpic = (Button) findViewById(R.id.button_camera);
         btnpic.setOnClickListener(new btnTakePhotoClicker());
 
         btngal = (Button) findViewById(R.id.button_gallery);
-        imgTakenPic = (ImageView) findViewById(R.id.imageView);
         btngal.setOnClickListener(new btnOpenGalleryClicker());
+
+        btnedit = (Button) findViewById(R.id.button_manipulate);
+        btnedit.setOnClickListener(new btnEditPhotoClicker());
     }
 
     @Override
@@ -58,15 +64,16 @@ public class MainActivity extends AppCompatActivity {
             super.onActivityResult(requestCode, resultCode, data);
             //if cam request, get image from camera
             if(requestCode == CAM_REQUEST){
-                Bitmap bitmap = (Bitmap) data.getExtras().get("data");
+                bitmap = (Bitmap) data.getExtras().get("data");
                 imgTakenPic.setImageBitmap(bitmap);
             }
             //if picking image from gallery we have to convert URI to data via inputStream
             if(requestCode == PICK_IMAGE && resultCode == RESULT_OK && null != data) {
                 Uri imageUri = data.getData();
                 InputStream imageStream = getContentResolver().openInputStream(imageUri);
-                Bitmap selectedImage = BitmapFactory.decodeStream(imageStream);
-                imgTakenPic.setImageBitmap(selectedImage);
+                bitmap = BitmapFactory.decodeStream(imageStream);
+                resizeBitmap();
+                imgTakenPic.setImageBitmap(bitmap);
             }
         } catch(Exception e) {
             //don't break if the user sends no image
@@ -91,8 +98,32 @@ public class MainActivity extends AppCompatActivity {
             Intent galleryIntent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
             // Start the Intent
             startActivityForResult(galleryIntent, PICK_IMAGE);
-
         }
-
     }
+
+    class btnEditPhotoClicker implements  Button.OnClickListener{
+        @Override
+        public void onClick(View view) {
+            if(bitmap!=null){
+                Intent editIntent = new Intent(getApplicationContext(),EditBitmap.class);
+                editIntent.putExtra("bitmap",bitmap);
+                editIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+                startActivity(editIntent);
+            } else {
+                Toast.makeText(getApplicationContext(), "Select an image to edit!", Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+
+    private void resizeBitmap(){
+        //resize the bitmap to a predetermined imageView width (IMAGE_VIEW_WIDTH)
+        float aspectRatio = bitmap.getWidth() / (float) bitmap.getHeight();
+        int width = IMAGE_VIEW_WIDTH;
+        int height = Math.round(width / aspectRatio);
+
+        bitmap = Bitmap.createScaledBitmap(bitmap, width, height, false);
+    }
+
 }
