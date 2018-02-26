@@ -19,9 +19,13 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.net.Uri;
+import android.os.AsyncTask;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
@@ -30,16 +34,30 @@ import android.widget.Toast;
 
 import com.google.api.client.extensions.android.json.AndroidJsonFactory;
 import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.util.IOUtils;
 import com.google.api.services.vision.v1.Vision;
 import com.google.api.services.vision.v1.VisionRequestInitializer;
+import com.google.api.services.vision.v1.model.AnnotateImageRequest;
+import com.google.api.services.vision.v1.model.BatchAnnotateImagesRequest;
+import com.google.api.services.vision.v1.model.BatchAnnotateImagesResponse;
+import com.google.api.services.vision.v1.model.EntityAnnotation;
+import com.google.api.services.vision.v1.model.Feature;
+import com.google.api.services.vision.v1.model.Image;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
     private Button btnpic;
     private Button btngal;
-    private Button btnedit;
+    private Button btndetect;
     private ImageView imgTakenPic;
     private Bitmap bitmap;
     //code for using camera
@@ -47,8 +65,11 @@ public class MainActivity extends AppCompatActivity {
     //code for using gallery/file explorer
     public static final int PICK_IMAGE = 1;
     private static final int IMAGE_VIEW_WIDTH = 455;
-    //the vision object used to pass info back and forth to Google Vision API
-    private Vision vision;
+    private Handler mCloudHandler;
+    private HandlerThread mCloudThread;
+    private static final String TAG = MainActivity.class.getSimpleName();
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,23 +84,21 @@ public class MainActivity extends AppCompatActivity {
         btngal = (Button) findViewById(R.id.button_gallery);
         btngal.setOnClickListener(new btnOpenGalleryClicker());
 
-        btnedit = (Button) findViewById(R.id.button_manipulate);
-        btnedit.setOnClickListener(new btnEditPhotoClicker());
+        btndetect = (Button) findViewById(R.id.button_detect);
+        btndetect.setOnClickListener(new btnMakeRequest());
 
-        vision = createVisionBuilder().build();
+        mCloudThread = new HandlerThread("CloudThread");
+        mCloudThread.start();
+        mCloudHandler = new Handler(mCloudThread.getLooper());
     }
 
-    private Vision.Builder createVisionBuilder(){
-        //create a vision builder for a new vision
-        Vision.Builder visionBuilder = new Vision.Builder(
-                new NetHttpTransport(),
-                new AndroidJsonFactory(),
-                null);
+    private void resizeBitmap(){
+        //resize the bitmap to a predetermined imageView width (IMAGE_VIEW_WIDTH)
+        float aspectRatio = bitmap.getWidth() / (float) bitmap.getHeight();
+        int width = IMAGE_VIEW_WIDTH;
+        int height = Math.round(width / aspectRatio);
 
-        visionBuilder.setVisionRequestInitializer(
-                new VisionRequestInitializer("AIzaSyCAlxdQBvhRZ5IcCYFEi7pAoVUpE_LBaDo"));
-
-        return visionBuilder;
+        bitmap = Bitmap.createScaledBitmap(bitmap, width, height, false);
     }
 
     @Override
@@ -125,30 +144,59 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    class btnEditPhotoClicker implements  Button.OnClickListener{
-        //launch edit image activity
+    class btnMakeRequest implements  Button.OnClickListener{
+        //make request to Google for label detection
         @Override
         public void onClick(View view) {
             if(bitmap!=null){
-                Intent editIntent = new Intent(getApplicationContext(),DrawingActivity.class);
-                editIntent.putExtra("bitmap",bitmap);
-                editIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                /*Intent labelIntent = new Intent(getApplicationContext(),LabelDetection.class);
+                labelIntent.putExtra("bitmap",bitmap);
+                labelIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
-                startActivity(editIntent);
+                startActivity(labelIntent);
+
+                labelMap = makeRequest();
+                printMap(labelMap);
+                */
+                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+                final byte[] photoData = stream.toByteArray();
+
+                mCloudHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        Log.d(TAG, "sending image to cloud vision");
+                        // annotate image by uploading to Cloud Vision API
+                        try {
+                            Map<String, Float> annotations = LabelDetection.annotateImage(photoData);
+                            Log.d(TAG, "cloud vision annotations:" + annotations);
+                            if (annotations != null) {
+                                printMap(annotations);
+                            }
+                        } catch (IOException e) {
+                            Log.e(TAG, "Cloud Vison API error: ", e);
+                        }
+                    }
+                });
             } else {
                 Toast.makeText(getApplicationContext(), "Select an image to edit!", Toast.LENGTH_LONG).show();
             }
         }
     }
-
-    private void resizeBitmap(){
-        //resize the bitmap to a predetermined imageView width (IMAGE_VIEW_WIDTH)
-        float aspectRatio = bitmap.getWidth() / (float) bitmap.getHeight();
-        int width = IMAGE_VIEW_WIDTH;
-        int height = Math.round(width / aspectRatio);
-
-        bitmap = Bitmap.createScaledBitmap(bitmap, width, height, false);
+    public void printMap(Map mp) {
+        Iterator it = mp.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry pair = (Map.Entry)it.next();
+            Toast.makeText(getApplicationContext(),pair.getKey() + " = " + pair.getValue(),Toast.LENGTH_LONG).show();
+            it.remove(); // avoids a ConcurrentModificationException
+        }
+        Toast.makeText(getApplicationContext(),"No more labels.",Toast.LENGTH_LONG).show();
     }
 
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mCloudThread.quit();
+    }
 }
