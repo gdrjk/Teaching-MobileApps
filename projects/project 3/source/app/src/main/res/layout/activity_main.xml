@@ -43,12 +43,12 @@ tools:context="alston.samuel.srap3.MainActivity">
     android:text="Open Gallery" />
 
 <Button
-    android:id="@+id/button_manipulate"
+    android:id="@+id/button_detect"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:layout_alignBaseline="@+id/button_gallery"
     android:layout_alignBottom="@+id/button_gallery"
     android:layout_centerHorizontal="true"
-    android:text="Edit Image" />
+    android:text="detect" />
 
 </RelativeLayout>

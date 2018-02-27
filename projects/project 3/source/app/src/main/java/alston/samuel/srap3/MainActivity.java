@@ -20,9 +20,12 @@ import android.graphics.Paint;
 import android.graphics.Path;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.os.StrictMode;
 import android.provider.MediaStore;
+import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -45,6 +48,7 @@ import com.google.api.services.vision.v1.model.Feature;
 import com.google.api.services.vision.v1.model.Image;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -67,6 +71,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int IMAGE_VIEW_WIDTH = 455;
     private Handler mCloudHandler;
     private HandlerThread mCloudThread;
+    private Uri imageToUploadUri;
     private static final String TAG = MainActivity.class.getSimpleName();
 
 
@@ -107,7 +112,9 @@ public class MainActivity extends AppCompatActivity {
             super.onActivityResult(requestCode, resultCode, data);
             //if cam request, get image from camera
             if(requestCode == CAM_REQUEST){
-                bitmap = (Bitmap) data.getExtras().get("data");
+                Uri selectedImage = imageToUploadUri;
+                getContentResolver().notifyChange(selectedImage, null);
+                bitmap = getBitmap(imageToUploadUri.getPath());
                 imgTakenPic.setImageBitmap(bitmap);
             }
             //if picking image from gallery we have to convert URI to data via inputStream
@@ -115,13 +122,78 @@ public class MainActivity extends AppCompatActivity {
                 Uri imageUri = data.getData();
                 InputStream imageStream = getContentResolver().openInputStream(imageUri);
                 bitmap = BitmapFactory.decodeStream(imageStream);
-                resizeBitmap();
+                //resizeBitmap();
+                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+
+                bitmap.compress(Bitmap.CompressFormat.PNG, 60, stream);
+
                 imgTakenPic.setImageBitmap(bitmap);
             }
         } catch(Exception e) {
             //don't break if the user sends no image
+            Toast.makeText(getApplicationContext(),"You didn't send an image.",Toast.LENGTH_LONG).show();
         }
+    }
 
+    private Bitmap getBitmap(String path) {
+
+        Uri uri = Uri.fromFile(new File(path));
+        InputStream in = null;
+        try {
+            final int IMAGE_MAX_SIZE = 1200000; // 1.2MP
+            in = getContentResolver().openInputStream(uri);
+
+            // Decode image size
+            BitmapFactory.Options o = new BitmapFactory.Options();
+            o.inJustDecodeBounds = true;
+            BitmapFactory.decodeStream(in, null, o);
+            in.close();
+
+
+            int scale = 1;
+            while ((o.outWidth * o.outHeight) * (1 / Math.pow(scale, 2)) >
+                    IMAGE_MAX_SIZE) {
+                scale++;
+            }
+            Log.d("", "scale = " + scale + ", orig-width: " + o.outWidth + ", orig-height: " + o.outHeight);
+
+            Bitmap b = null;
+            in = getContentResolver().openInputStream(uri);
+            if (scale > 1) {
+                scale--;
+                // scale to max possible inSampleSize that still yields an image
+                // larger than target
+                o = new BitmapFactory.Options();
+                o.inSampleSize = scale;
+                b = BitmapFactory.decodeStream(in, null, o);
+
+                // resize to desired dimensions
+                int height = b.getHeight();
+                int width = b.getWidth();
+                Log.d("", "1th scale operation dimenions - width: " + width + ", height: " + height);
+
+                double y = Math.sqrt(IMAGE_MAX_SIZE
+                        / (((double) width) / height));
+                double x = (y / height) * width;
+
+                Bitmap scaledBitmap = Bitmap.createScaledBitmap(b, (int) x,
+                        (int) y, true);
+                b.recycle();
+                b = scaledBitmap;
+
+                System.gc();
+            } else {
+                b = BitmapFactory.decodeStream(in);
+            }
+            in.close();
+
+            Log.d("", "bitmap size - width: " + b.getWidth() + ", height: " +
+                    b.getHeight());
+            return b;
+        } catch (IOException e) {
+            Log.e("", e.getMessage(), e);
+            return null;
+        }
     }
 
     class btnTakePhotoClicker implements Button.OnClickListener{
@@ -129,6 +201,11 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onClick(View view){
             Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            File imgFile = new File(Environment.getExternalStorageDirectory(), "current_image.jpg");
+            Uri photoURI =FileProvider.getUriForFile(getApplicationContext(), getApplicationContext().getPackageName() + ".my.package.name.provider", imgFile);
+            intent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            imageToUploadUri = Uri.fromFile(imgFile);
             startActivityForResult(intent, CAM_REQUEST);
         }
     }
@@ -149,15 +226,6 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onClick(View view) {
             if(bitmap!=null){
-                /*Intent labelIntent = new Intent(getApplicationContext(),LabelDetection.class);
-                labelIntent.putExtra("bitmap",bitmap);
-                labelIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-
-                startActivity(labelIntent);
-
-                labelMap = makeRequest();
-                printMap(labelMap);
-                */
                 ByteArrayOutputStream stream = new ByteArrayOutputStream();
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
                 final byte[] photoData = stream.toByteArray();
@@ -183,13 +251,14 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+
     public void printMap(Map mp) {
         Iterator it = mp.entrySet().iterator();
-        while (it.hasNext()) {
+        //while (it.hasNext()) {
             Map.Entry pair = (Map.Entry)it.next();
-            Toast.makeText(getApplicationContext(),pair.getKey() + " = " + pair.getValue(),Toast.LENGTH_LONG).show();
+            Toast.makeText(getApplicationContext(),pair.getKey() + " = " + pair.getValue() + "% certainty.",Toast.LENGTH_LONG).show();
             it.remove(); // avoids a ConcurrentModificationException
-        }
+        //}
         Toast.makeText(getApplicationContext(),"No more labels.",Toast.LENGTH_LONG).show();
     }
 
