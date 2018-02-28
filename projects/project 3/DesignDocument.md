@@ -17,16 +17,16 @@ Open Camera launches the phone's camera. Once you have taken a satisfactory pict
 Open Gallery launches your selected image file selector. Once a single image is selected you return to the main menu and the selected image is displayed on the screen. You may then properly "detect".
 
 #### Detect
-Before an image has been selected, this button will raise a toast prompting the user to select an image. Once an image has been selected, detect will display a circular progress bar to indicate that the app is processing the image and awaiting a response from Google Cloud. When the response comes in a new activity is launched to ask the user a series of questions about the labels detected by Google's Vision API.
+Before an image has been selected, this button will raise a toast prompting the user to select an image. Once an image has been selected, detect will display a circular progress bar to indicate that the app is processing the image and awaiting a response from Google Cloud. Buttons are disabled while processing. When the response comes in a new activity is launched (second menu) to ask the user a series of questions about the labels detected by Google's Vision API.
 
 ### Second Menu
 
-In this activity, the labels detected and their certainty of accuracy are displayed on the screen one at a time in descending order. There are two button below the display text: "yes", "no".
+In this activity, the labels detected and their certainty of accuracy are displayed on the screen one at a time in descending order. There are two button below the display text: "yes", "no". Upon finishing the list of labels, they are displayed to the user. Yes button is disabled and "no" becomes "exit". Which makes the activity end.
 
 #### yes
 
-If a user clicks "yes" then the app will return to the Main Menu where their image they just detected will be, including a smug toast saying that the app thought that the image contained that label, then prompting the user to continue selecting images and detecting labels.
+If a user clicks "yes" then the labels are added to a lower textView that has the working labels and the main textView shows the next label that could be in the image. Upon completing the labels "yes" is disabled, "no" becomes "exit" and the working labels are moved to the main textView to show what labels were in the image.
 
 #### no
 
-If a user clicks "no" then the app will change the text to the label with the next highest certainty. If the app is out of labels for that image the activity quits and toasts the user saying it ran out of labels, then prompts the user to continue using the app.
+If a user clicks "no" then the app will change the text to the label with the next highest certainty. If the app is out of labels for that image the textview shows all the labels the user agreed were in the picture. This button also transfroms into "Exit" button when the labels are done.
