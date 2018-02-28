@@ -3,6 +3,11 @@
     package="alston.samuel.srap3">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="true" />
 
     <application
         android:allowBackup="true"
@@ -18,11 +23,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".DrawingActivity" />
 
         <provider
-            android:name=".GenericFileProvider"
-            android:authorities="${applicationId}.my.package.name.provider"
+            android:name="android.support.v4.content.FileProvider"
+            android:authorities="alston.samuel.srap3"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
@@ -30,6 +34,7 @@
                 android:resource="@xml/provider_paths" />
         </provider>
 
+        <activity android:name=".ListResults"></activity>
     </application>
 
 </manifest>

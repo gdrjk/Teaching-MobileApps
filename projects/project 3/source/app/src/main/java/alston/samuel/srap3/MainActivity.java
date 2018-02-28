@@ -1,6 +1,6 @@
 /*
 Author: Samuel Alston
-Last modified: 02/24/2018
+Last modified: 02/26/2018
 
 Purpose: This app is to complete the requirements for CS480's project 3.
 "...use the Google Vision API to interpret pictures taken by the camera. Your application should then try to guess what is in the picture."
@@ -9,53 +9,46 @@ Purpose: This app is to complete the requirements for CS480's project 3.
  */
 package alston.samuel.srap3;
 
-import android.app.Activity;
-import android.content.Context;
+
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Path;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.os.StrictMode;
 import android.provider.MediaStore;
 import android.support.v4.content.FileProvider;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.Toast;
-
-import com.google.api.client.extensions.android.json.AndroidJsonFactory;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.util.IOUtils;
-import com.google.api.services.vision.v1.Vision;
-import com.google.api.services.vision.v1.VisionRequestInitializer;
-import com.google.api.services.vision.v1.model.AnnotateImageRequest;
-import com.google.api.services.vision.v1.model.BatchAnnotateImagesRequest;
-import com.google.api.services.vision.v1.model.BatchAnnotateImagesResponse;
-import com.google.api.services.vision.v1.model.EntityAnnotation;
-import com.google.api.services.vision.v1.model.Feature;
-import com.google.api.services.vision.v1.model.Image;
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
-import java.util.HashMap;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.stream.Stream;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -68,19 +61,25 @@ public class MainActivity extends AppCompatActivity {
     private static final int CAM_REQUEST = 1313;
     //code for using gallery/file explorer
     public static final int PICK_IMAGE = 1;
-    private static final int IMAGE_VIEW_WIDTH = 455;
     private Handler mCloudHandler;
+    private Handler progressHandler;
+    private Runnable runnable;
     private HandlerThread mCloudThread;
-    private Uri imageToUploadUri;
     private static final String TAG = MainActivity.class.getSimpleName();
-
-
+    private String mCurrentPhotoPath;
+    private ProgressBar progressBar;
+    private Timer timer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        initializers();
+    }
+
+    private void initializers() {
+        //initialize variables to be called in onCreate
         imgTakenPic = (ImageView)findViewById(R.id.imageView);
 
         btnpic = (Button) findViewById(R.id.button_camera);
@@ -92,18 +91,12 @@ public class MainActivity extends AppCompatActivity {
         btndetect = (Button) findViewById(R.id.button_detect);
         btndetect.setOnClickListener(new btnMakeRequest());
 
+        progressBar = (ProgressBar) findViewById(R.id.progressBar);
+        progressBar.setVisibility(View.GONE);
+
         mCloudThread = new HandlerThread("CloudThread");
         mCloudThread.start();
         mCloudHandler = new Handler(mCloudThread.getLooper());
-    }
-
-    private void resizeBitmap(){
-        //resize the bitmap to a predetermined imageView width (IMAGE_VIEW_WIDTH)
-        float aspectRatio = bitmap.getWidth() / (float) bitmap.getHeight();
-        int width = IMAGE_VIEW_WIDTH;
-        int height = Math.round(width / aspectRatio);
-
-        bitmap = Bitmap.createScaledBitmap(bitmap, width, height, false);
     }
 
     @Override
@@ -111,28 +104,50 @@ public class MainActivity extends AppCompatActivity {
         try{
             super.onActivityResult(requestCode, resultCode, data);
             //if cam request, get image from camera
-            if(requestCode == CAM_REQUEST){
-                Uri selectedImage = imageToUploadUri;
-                getContentResolver().notifyChange(selectedImage, null);
-                bitmap = getBitmap(imageToUploadUri.getPath());
-                imgTakenPic.setImageBitmap(bitmap);
+            if(requestCode == CAM_REQUEST && resultCode == RESULT_OK){
+                //cameraResult(data);
+                if(mCurrentPhotoPath!=null && mCurrentPhotoPath!="")
+                {
+                    File f = new File(mCurrentPhotoPath);
+                    if(f.exists())
+                    {
+                        Drawable d = Drawable.createFromPath(mCurrentPhotoPath);
+                        imgTakenPic.setImageDrawable(d);
+                        bitmap = getBitmap(mCurrentPhotoPath);
+                        //compress bitmap for speed
+                        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+
+                    }
+                }
             }
+
             //if picking image from gallery we have to convert URI to data via inputStream
-            if(requestCode == PICK_IMAGE && resultCode == RESULT_OK && null != data) {
-                Uri imageUri = data.getData();
-                InputStream imageStream = getContentResolver().openInputStream(imageUri);
-                bitmap = BitmapFactory.decodeStream(imageStream);
-                //resizeBitmap();
-                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+            if(requestCode == PICK_IMAGE && resultCode == RESULT_OK && data != null) {
+                try {
+                    galleryResult(data);
+                } catch(FileNotFoundException e) {
 
-                bitmap.compress(Bitmap.CompressFormat.PNG, 60, stream);
-
-                imgTakenPic.setImageBitmap(bitmap);
+                }
             }
         } catch(Exception e) {
             //don't break if the user sends no image
             Toast.makeText(getApplicationContext(),"You didn't send an image.",Toast.LENGTH_LONG).show();
         }
+    }
+
+    private void galleryResult(Intent data) throws FileNotFoundException {
+        //handle the response from gallery picture selection
+        Uri imageUri = data.getData();
+        InputStream imageStream = getContentResolver().openInputStream(imageUri);
+        bitmap = BitmapFactory.decodeStream(imageStream);
+
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+
+        //try to make it smaller since the response time is long with HQ images
+        bitmap.compress(Bitmap.CompressFormat.PNG, 50, stream);
+
+        imgTakenPic.setImageBitmap(bitmap);
     }
 
     private Bitmap getBitmap(String path) {
@@ -199,14 +214,8 @@ public class MainActivity extends AppCompatActivity {
     class btnTakePhotoClicker implements Button.OnClickListener{
         //set Open camera button intent
         @Override
-        public void onClick(View view){
-            Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-            File imgFile = new File(Environment.getExternalStorageDirectory(), "current_image.jpg");
-            Uri photoURI =FileProvider.getUriForFile(getApplicationContext(), getApplicationContext().getPackageName() + ".my.package.name.provider", imgFile);
-            intent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
-            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            imageToUploadUri = Uri.fromFile(imgFile);
-            startActivityForResult(intent, CAM_REQUEST);
+        public void onClick(View view) {
+            dispatchTakePictureIntent();
         }
     }
 
@@ -222,7 +231,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     class btnMakeRequest implements  Button.OnClickListener{
-        //make request to Google for label detection
+        //make request to Google for label detection, call LabelDetection.annotateImage
         @Override
         public void onClick(View view) {
             if(bitmap!=null){
@@ -246,22 +255,73 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                 });
+                progressBar.setVisibility(View.VISIBLE);
             } else {
                 Toast.makeText(getApplicationContext(), "Select an image to edit!", Toast.LENGTH_LONG).show();
             }
         }
     }
 
-    public void printMap(Map mp) {
-        Iterator it = mp.entrySet().iterator();
-        //while (it.hasNext()) {
-            Map.Entry pair = (Map.Entry)it.next();
-            Toast.makeText(getApplicationContext(),pair.getKey() + " = " + pair.getValue() + "% certainty.",Toast.LENGTH_LONG).show();
-            it.remove(); // avoids a ConcurrentModificationException
-        //}
-        Toast.makeText(getApplicationContext(),"No more labels.",Toast.LENGTH_LONG).show();
+    private void dispatchTakePictureIntent() {
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        // Ensure that there's a camera activity to handle the intent
+        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+            // Create the File where the photo should go
+            File photoFile = null;
+            try {
+                photoFile = createImageFile();
+            } catch (IOException ex) {
+                // Error occurred while creating the File
+
+            }
+            // Continue only if the File was successfully created
+            if (photoFile != null) {
+                Uri photoURI = FileProvider.getUriForFile(this,
+                        "alston.samuel.srap3",
+                        photoFile);
+                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
+                startActivityForResult(takePictureIntent, CAM_REQUEST);
+            }
+        }
     }
 
+    public void printMap(Map<String, Float> mp) {
+        List<Map.Entry<String,Float>> entries = new ArrayList<Map.Entry<String,Float>>(
+                mp.entrySet()
+        );
+        Collections.sort(
+                entries,
+                new Comparator<Map.Entry<String,Float>>() {
+                    public int compare(Map.Entry<String,Float> a, Map.Entry<String,Float> b) {
+                        return Float.compare(b.getValue(), a.getValue());
+                    }
+                }
+        );
+        for (Map.Entry<String,Float> pair : entries) {
+            // This loop prints entries. You can use the same loop
+            // to get the keys from entries, and add it to your target list.
+            //System.out.println(e.getKey()+":"+e.getValue());
+            Toast.makeText(getApplicationContext(),pair.getKey() + " " + pair.getValue() + "% certain",Toast.LENGTH_SHORT).show();
+
+        }
+
+    }
+
+    private File createImageFile() throws IOException {
+        // Create an image file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        String imageFileName = "JPEG_" + timeStamp + "_";
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        File image = File.createTempFile(
+                imageFileName,  /* prefix */
+                ".jpg",         /* suffix */
+                storageDir      /* directory */
+        );
+
+        // Save a file: path for use with ACTION_VIEW intents
+        mCurrentPhotoPath = image.getAbsolutePath();
+        return image;
+    }
 
     @Override
     protected void onDestroy() {

@@ -27,6 +27,8 @@ import java.util.Map;
 
 /**
  * Created by Samuel on 2/26/2018.
+ * This class handles taking the image byte array and sending it off to Google Vision API
+ * Class was pulled from Google documentation and modified for SRAp3
  */
 
 public class LabelDetection extends Activity{
