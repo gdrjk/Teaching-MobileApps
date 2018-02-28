@@ -1,16 +1,16 @@
 /*
 Author: Samuel Alston
-Last modified: 02/26/2018
+Last modified: 02/27/2018
 
 Purpose: This app is to complete the requirements for CS480's project 3.
 "...use the Google Vision API to interpret pictures taken by the camera. Your application should then try to guess what is in the picture."
 
-
+Main Activity allows user to set imageView from gallery or camera. Detect will start LabelDetection.annotateImage to be returned to MainActivity.
+Once LabelDetection activity returns ListResults is launched. ListResults will prompt user to answer if image contains labels from Google Vision API.
  */
 package alston.samuel.srap3;
 
 
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -21,7 +21,6 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.provider.MediaStore;
 import android.support.v4.content.FileProvider;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -35,20 +34,13 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.stream.Stream;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -62,13 +54,10 @@ public class MainActivity extends AppCompatActivity {
     //code for using gallery/file explorer
     public static final int PICK_IMAGE = 1;
     private Handler mCloudHandler;
-    private Handler progressHandler;
-    private Runnable runnable;
     private HandlerThread mCloudThread;
     private static final String TAG = MainActivity.class.getSimpleName();
     private String mCurrentPhotoPath;
     private ProgressBar progressBar;
-    private Timer timer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,6 +90,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        //Deals with camera and gallery results, setting selected image to imageview
         try{
             super.onActivityResult(requestCode, resultCode, data);
             //if cam request, get image from camera
@@ -116,7 +106,7 @@ public class MainActivity extends AppCompatActivity {
                         bitmap = getBitmap(mCurrentPhotoPath);
                         //compress bitmap for speed
                         ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+                        bitmap.compress(Bitmap.CompressFormat.PNG, 60, stream);
 
                     }
                 }
@@ -130,6 +120,7 @@ public class MainActivity extends AppCompatActivity {
 
                 }
             }
+
         } catch(Exception e) {
             //don't break if the user sends no image
             Toast.makeText(getApplicationContext(),"You didn't send an image.",Toast.LENGTH_LONG).show();
@@ -151,7 +142,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private Bitmap getBitmap(String path) {
-
+        //use string path to set bitmap to image from the path
         Uri uri = Uri.fromFile(new File(path));
         InputStream in = null;
         try {
@@ -248,7 +239,7 @@ public class MainActivity extends AppCompatActivity {
                             Map<String, Float> annotations = LabelDetection.annotateImage(photoData);
                             Log.d(TAG, "cloud vision annotations:" + annotations);
                             if (annotations != null) {
-                                printMap(annotations);
+                                preparListIntent(annotations);
                             }
                         } catch (IOException e) {
                             Log.e(TAG, "Cloud Vison API error: ", e);
@@ -263,6 +254,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void dispatchTakePictureIntent() {
+        //start intent to launch camera activity
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         // Ensure that there's a camera activity to handle the intent
         if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
@@ -285,7 +277,14 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void printMap(Map<String, Float> mp) {
+    public void preparListIntent(Map<String, Float> mp) {
+        //Get rid of progress bar, then prepare Intent for ListResult and startActivity
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                progressBar.setVisibility(View.GONE);
+            }
+        });
         List<Map.Entry<String,Float>> entries = new ArrayList<Map.Entry<String,Float>>(
                 mp.entrySet()
         );
@@ -297,14 +296,18 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
         );
+        String labels[] = new String[entries.size()];
+        float certainty[] = new float[entries.size()];
+        int i =0;
         for (Map.Entry<String,Float> pair : entries) {
-            // This loop prints entries. You can use the same loop
-            // to get the keys from entries, and add it to your target list.
-            //System.out.println(e.getKey()+":"+e.getValue());
-            Toast.makeText(getApplicationContext(),pair.getKey() + " " + pair.getValue() + "% certain",Toast.LENGTH_SHORT).show();
-
+            labels[i] = pair.getKey();
+            certainty[i] = pair.getValue();
+            i++;
         }
-
+        Intent resultPageIntent = new Intent(getApplicationContext(),ListResults.class);
+        resultPageIntent.putExtra("labels", labels);
+        resultPageIntent.putExtra("certainty",certainty);
+        startActivity(resultPageIntent);
     }
 
     private File createImageFile() throws IOException {
@@ -325,7 +328,8 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        //destroy thread safely
         super.onDestroy();
-        mCloudThread.quit();
+        mCloudThread.quitSafely();
     }
 }
