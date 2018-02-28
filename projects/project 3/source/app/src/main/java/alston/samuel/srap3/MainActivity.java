@@ -246,11 +246,19 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                 });
+                btnsEnabled(false);
                 progressBar.setVisibility(View.VISIBLE);
             } else {
                 Toast.makeText(getApplicationContext(), "Select an image to edit!", Toast.LENGTH_LONG).show();
             }
         }
+    }
+
+    private void btnsEnabled(boolean condition) {
+        //set all the buttons to enable or disabled with one function call
+        btndetect.setEnabled(condition);
+        btngal.setEnabled(condition);
+        btnpic.setEnabled(condition);
     }
 
     private void dispatchTakePictureIntent() {
@@ -279,6 +287,8 @@ public class MainActivity extends AppCompatActivity {
 
     public void preparListIntent(Map<String, Float> mp) {
         //Get rid of progress bar, then prepare Intent for ListResult and startActivity
+        //enable buttons for return to this activity
+        btnsEnabled(true);
         runOnUiThread(new Runnable() {
             @Override
             public void run() {

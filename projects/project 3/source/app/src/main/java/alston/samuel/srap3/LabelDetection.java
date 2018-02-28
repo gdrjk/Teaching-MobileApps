@@ -83,4 +83,5 @@ public class LabelDetection extends Activity{
         }
         return annotations;
     }
+
 }

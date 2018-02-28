@@ -18,6 +18,9 @@ import android.widget.Toast;
 public class ListResults extends AppCompatActivity {
     private Intent thisIntent;
     private TextView resultTextView;
+    private TextView workingLabels;
+    private TextView header;
+    private String stringOfLabels;
     private Button btnYes;
     private Button btnNo;
     private String[] labels;
@@ -35,7 +38,6 @@ public class ListResults extends AppCompatActivity {
     private void initializeVars() {
         //run first time set up for activity
         //find views and set textView to first response.
-        //initialize i to 1 so it will iterate through arrays after first element
         btnNo = (Button) findViewById(R.id.button_no);
         btnYes = (Button) findViewById(R.id.button_yes);
 
@@ -43,12 +45,19 @@ public class ListResults extends AppCompatActivity {
         btnNo.setOnClickListener(new btnNoListener());
 
         resultTextView = (TextView) findViewById(R.id.textViewResult);
+        workingLabels = (TextView) findViewById(R.id.workingLabels);
+        header = (TextView) findViewById(R.id.header);
+
+        //initialize string to empty so we can += strings
+        stringOfLabels = "";
+
         thisIntent = getIntent();
         Bundle b = thisIntent.getExtras();
 
         labels =b.getStringArray("labels");
         certainty = b.getFloatArray("certainty");
 
+        //initialize i to 1 so it will iterate through arrays after first element
         i = 1;
 
         try {
@@ -63,8 +72,13 @@ public class ListResults extends AppCompatActivity {
         //exit activity when yes is clicked, prompting user to do another image detection
         @Override
         public void onClick(View view) {
-            Toast.makeText(getApplicationContext(),"That's what I thought! Do another.", Toast.LENGTH_LONG).show();
-            finish();
+            if(i < labels.length) {
+                stringOfLabels+="("+ labels[i] + ") ";
+                iterateLabel();
+                workingLabels.setText(stringOfLabels);
+            } else {
+                endOfLabels();
+            }
         }
     }
 
@@ -73,12 +87,44 @@ public class ListResults extends AppCompatActivity {
         @Override
         public void onClick(View view) {
             if(i < labels.length) {
-                resultTextView.setText(labels[i] + "? \n(" + certainty[i] + "% certainty)");
-                i++;
+                iterateLabel();
             } else {
-                Toast.makeText(getApplicationContext(),"I'm out of guesses! Do another.", Toast.LENGTH_LONG).show();
-                finish();
+                endOfLabels();
             }
         }
+    }
+
+    class btnExitListener implements  Button.OnClickListener {
+        //Exit activity
+        @Override
+        public void onClick(View view) {
+            finish();
+        }
+    }
+
+    private void iterateLabel(){
+        //go to next label, set text view
+        if(i < labels.length) {
+            resultTextView.setText(labels[i] + "? \n(" + certainty[i] + "% certainty)");
+            i++;
+        }
+    }
+
+    private void endOfLabels(){
+        //when list of labels runs out, set screen to display the labels image did contain
+        //disable yes button, turn no button into exit button
+        header.setText("Image Contained:");
+        resultTextView.setText(stringOfLabels);
+        workingLabels.setText("");
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                btnNo.setText("Exit");
+                btnNo.setOnClickListener(new btnExitListener());
+                btnYes.setEnabled(false);
+                header.setTextSize(24);
+                resultTextView.setTextSize(18);
+            }
+        });
     }
 }

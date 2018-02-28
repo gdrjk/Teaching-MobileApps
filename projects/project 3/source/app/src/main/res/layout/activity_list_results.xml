@@ -25,13 +25,12 @@
         android:id="@+id/button_yes"
         android:layout_width="128dp"
         android:layout_height="128dp"
-        android:layout_marginBottom="99dp"
         android:layout_marginEnd="48dp"
         android:layout_marginStart="32dp"
-        android:layout_marginTop="208dp"
+        android:layout_marginTop="168dp"
         android:text="Yes!"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/button_no"
+        app:layout_constraintHorizontal_bias="0.375"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textViewResult" />
 
@@ -39,11 +38,9 @@
         android:id="@+id/button_no"
         android:layout_width="128dp"
         android:layout_height="128dp"
-        android:layout_marginBottom="99dp"
         android:layout_marginEnd="32dp"
-        android:layout_marginTop="208dp"
+        android:layout_marginTop="168dp"
         android:text="No!"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textViewResult" />
 
@@ -60,4 +57,15 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/workingLabels"
+        android:layout_width="320dp"
+        android:layout_height="123dp"
+        android:layout_marginBottom="16dp"
+        android:layout_marginStart="32dp"
+        android:textSize="18dp"
+        app:layout_constraintBottom_toTopOf="@+id/button_yes"
+        app:layout_constraintStart_toStartOf="parent" />
+
 </android.support.constraint.ConstraintLayout>
