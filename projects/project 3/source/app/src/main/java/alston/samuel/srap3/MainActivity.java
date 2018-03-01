@@ -14,6 +14,7 @@ package alston.samuel.srap3;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Environment;
@@ -49,6 +50,7 @@ public class MainActivity extends AppCompatActivity {
     private Button btndetect;
     private ImageView imgTakenPic;
     private Bitmap bitmap;
+    private static final int MAX_BITMAP_DIMENSION = 512;
     //code for using camera
     private static final int CAM_REQUEST = 1313;
     //code for using gallery/file explorer
@@ -227,6 +229,7 @@ public class MainActivity extends AppCompatActivity {
         public void onClick(View view) {
             if(bitmap!=null){
                 ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                bitmap = getResizedBitmap(bitmap,MAX_BITMAP_DIMENSION,MAX_BITMAP_DIMENSION);
                 bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
                 final byte[] photoData = stream.toByteArray();
 
@@ -239,7 +242,7 @@ public class MainActivity extends AppCompatActivity {
                             Map<String, Float> annotations = LabelDetection.annotateImage(photoData);
                             Log.d(TAG, "cloud vision annotations:" + annotations);
                             if (annotations != null) {
-                                preparListIntent(annotations);
+                                prepareListIntent(annotations);
                             }
                         } catch (IOException e) {
                             Log.e(TAG, "Cloud Vison API error: ", e);
@@ -285,7 +288,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void preparListIntent(Map<String, Float> mp) {
+    public void prepareListIntent(Map<String, Float> mp) {
         //Get rid of progress bar, then prepare Intent for ListResult and startActivity
         //enable buttons for return to this activity
         btnsEnabled(true);
@@ -334,6 +337,24 @@ public class MainActivity extends AppCompatActivity {
         // Save a file: path for use with ACTION_VIEW intents
         mCurrentPhotoPath = image.getAbsolutePath();
         return image;
+    }
+
+    public Bitmap getResizedBitmap(Bitmap bm, int newWidth, int newHeight) {
+        //Resize bitmap, pulled from stackExchange post (by jeet.chanchawat)
+        //modified by SRA
+        int width = bm.getWidth();
+        int height = bm.getHeight();
+        float scaleWidth = ((float) newWidth) / width;
+        float scaleHeight = ((float) newHeight) / height;
+        // create matrix for manipulation
+        Matrix matrix = new Matrix();
+        // RESIZE THE BIT MAP
+        matrix.postScale(scaleWidth, scaleHeight);
+
+        //crete new bitmap new scaled bitmap
+        Bitmap resizedBitmap = Bitmap.createBitmap(
+                bm, 0, 0, width, height, matrix, false);
+        return resizedBitmap;
     }
 
     @Override
