@@ -57,11 +57,10 @@ public class ListResults extends AppCompatActivity {
         labels =b.getStringArray("labels");
         certainty = b.getFloatArray("certainty");
 
-        //initialize i to 1 so it will iterate through arrays after first element
-        i = 1;
+        i = 0;
 
         try {
-            resultTextView.setText(labels[0] + "? \n(" + certainty[0] + "% certainty)");
+            resultTextView.setText(labels[i] + "? \n(" + certainty[i] + "% certainty)");
         } catch (Exception e) {
             Toast.makeText(getApplicationContext(),"No labels were returned. Try another image.", Toast.LENGTH_LONG).show();
             finish();
@@ -72,10 +71,11 @@ public class ListResults extends AppCompatActivity {
         //exit activity when yes is clicked, prompting user to do another image detection
         @Override
         public void onClick(View view) {
-            if(i < labels.length) {
+            if(i < labels.length -1) {
                 stringOfLabels+="("+ labels[i] + ") ";
                 iterateLabel();
                 workingLabels.setText(stringOfLabels);
+
             } else {
                 endOfLabels();
             }
@@ -86,7 +86,7 @@ public class ListResults extends AppCompatActivity {
         //Change textView to next possible answer
         @Override
         public void onClick(View view) {
-            if(i < labels.length) {
+            if(i < labels.length -1) {
                 iterateLabel();
             } else {
                 endOfLabels();
@@ -104,9 +104,9 @@ public class ListResults extends AppCompatActivity {
 
     private void iterateLabel(){
         //go to next label, set text view
-        if(i < labels.length) {
-            resultTextView.setText(labels[i] + "? \n(" + certainty[i] + "% certainty)");
+        if(i < labels.length -1) {
             i++;
+            resultTextView.setText(labels[i] + "? \n(" + certainty[i] + "% certainty)");
         }
     }
 
