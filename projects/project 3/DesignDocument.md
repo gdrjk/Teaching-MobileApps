@@ -2,7 +2,7 @@
 This application uses the Google Vision API to detect labels in an image from either phone gallery, or image taken in app. Users are prompted to give yes/no answer if labels found were in the picture in descending order of Google's certainty. I made this application to understand how to use such an API and to show my friends and family a power piece of software I was able to bend to my will. It is also quite fun to use an app which I have been interested in since an episode of the television show "Silicon Valley" poked fun at the concept of an app that could detect what an image was, but their app only detected if something was a hotdog, or if it wasn't a hotdog. Mine returns Googles' best guesses, which in my testing have been quite accurate.
 
 ## System Design 
-This app targets SDK 19 and above. It will require a camera, access to the internet, and external write permission to store the high-res image that the users take to detect labels. Runs on Android 7+.
+This app targets API 19 and above. It will require a camera, access to the internet, and external write permission to store the high-res image that the users take to detect labels. Runs on Android 7+.
 
 ## Usage
 Launching the app will take you to a blank screen with three buttons. They are: Open Camera, Open Gallery, Detect.
