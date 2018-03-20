@@ -106,7 +106,7 @@ public class ListResults extends AppCompatActivity {
         //go to next label, set text view
         if(i < labels.length -1) {
             i++;
-            resultTextView.setText(labels[i] + "? \n(" + certainty[i] + "% certainty)");
+            resultTextView.setText(labels[i] + "? \n(" + certainty[i] + " probability of accuracy.)");
         }
     }
 
