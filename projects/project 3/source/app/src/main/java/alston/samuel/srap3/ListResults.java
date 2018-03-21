@@ -60,7 +60,7 @@ public class ListResults extends AppCompatActivity {
         i = 0;
 
         try {
-            resultTextView.setText(labels[i] + "? \n(" + certainty[i] + "% certainty)");
+            resultTextView.setText(labels[i] + "? \n(" + certainty[i] + " probability of accuracy.)");
         } catch (Exception e) {
             Toast.makeText(getApplicationContext(),"No labels were returned. Try another image.", Toast.LENGTH_LONG).show();
             finish();
@@ -71,11 +71,10 @@ public class ListResults extends AppCompatActivity {
         //exit activity when yes is clicked, prompting user to do another image detection
         @Override
         public void onClick(View view) {
-            if(i < labels.length -1) {
+            if(i < labels.length) {
                 stringOfLabels+="("+ labels[i] + ") ";
                 iterateLabel();
                 workingLabels.setText(stringOfLabels);
-
             } else {
                 endOfLabels();
             }
@@ -86,7 +85,7 @@ public class ListResults extends AppCompatActivity {
         //Change textView to next possible answer
         @Override
         public void onClick(View view) {
-            if(i < labels.length -1) {
+            if(i < labels.length) {
                 iterateLabel();
             } else {
                 endOfLabels();
@@ -104,9 +103,11 @@ public class ListResults extends AppCompatActivity {
 
     private void iterateLabel(){
         //go to next label, set text view
-        if(i < labels.length -1) {
-            i++;
+        i++;
+        if(i < labels.length ) {
             resultTextView.setText(labels[i] + "? \n(" + certainty[i] + " probability of accuracy.)");
+        } else {
+            endOfLabels();
         }
     }
 
@@ -115,7 +116,8 @@ public class ListResults extends AppCompatActivity {
         //disable yes button, turn no button into exit button
         header.setText("Image Contained:");
         resultTextView.setText(stringOfLabels);
-        workingLabels.setText("");
+        stringOfLabels="";
+        workingLabels.setText(stringOfLabels);
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
