@@ -50,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
     private Button btndetect;
     private ImageView imgTakenPic;
     private Bitmap bitmap;
-    private static final int MAX_BITMAP_DIMENSION = 512;
+    private static final int MAX_BITMAP_DIMENSION = 256;
     //code for using camera
     private static final int CAM_REQUEST = 1313;
     //code for using gallery/file explorer

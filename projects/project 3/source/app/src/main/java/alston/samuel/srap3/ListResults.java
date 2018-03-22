@@ -123,7 +123,7 @@ public class ListResults extends AppCompatActivity {
             public void run() {
                 btnNo.setText("Exit");
                 btnNo.setOnClickListener(new btnExitListener());
-                btnYes.setEnabled(false);
+                btnYes.setVisibility(View.GONE);
                 header.setTextSize(24);
                 resultTextView.setTextSize(18);
             }

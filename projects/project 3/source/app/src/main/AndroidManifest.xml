@@ -16,7 +16,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".MainActivity">
+        <activity android:name=".MainActivity" android:screenOrientation="portrait" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -34,7 +34,8 @@
                 android:resource="@xml/provider_paths" />
         </provider>
 
-        <activity android:name=".ListResults"></activity>
+        <activity android:name=".ListResults" android:screenOrientation="portrait" >
+        </activity>
     </application>
 
 </manifest>
